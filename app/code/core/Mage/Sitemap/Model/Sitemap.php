@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Sitemap
- * @copyright  Copyright (c) 2006-2016 X.commerce, Inc. and affiliates (http://www.magento.com)
+ * @copyright  Copyright (c) 2006-2017 X.commerce, Inc. and affiliates (http://www.magento.com)
  * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -197,13 +197,22 @@ class Mage_Sitemap_Model_Sitemap extends Mage_Core_Model_Abstract
         /**
          * Generate cms pages sitemap
          */
+        $homepage = (string)Mage::getStoreConfig('web/default/cms_home_page', $storeId);
         $changefreq = (string)Mage::getStoreConfig('sitemap/page/changefreq', $storeId);
         $priority   = (string)Mage::getStoreConfig('sitemap/page/priority', $storeId);
         $collection = Mage::getResourceModel('sitemap/cms_page')->getCollection($storeId);
-        foreach ($collection as $item) {
+        $pages = new Varien_Object();
+        $pages->setItems($collection);
+        Mage::dispatchEvent('sitemap_cms_pages_generating_before', array(
+            'collection' => $pages,
+            'store_id' => $storeId
+        ));
+        foreach ($pages->getItems() as $item) {
+            $url = $item->getUrl();
+            if ( $url == $homepage) { $url = ''; }
             $xml = sprintf(
                 '<url><loc>%s</loc><lastmod>%s</lastmod><changefreq>%s</changefreq><priority>%.1f</priority></url>',
-                htmlspecialchars($baseUrl . $item->getUrl()),
+                htmlspecialchars($baseUrl . $url),
                 $date,
                 $changefreq,
                 $priority
